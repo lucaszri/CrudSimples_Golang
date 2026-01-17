@@ -1,8 +1,8 @@
 package models
 
 import "time"
-
-type item_compra struct {
+	
+type Item_compra struct {
 	ID         int       `json:"id"`
 	ProdutoID  int       `json:"produto_id"`
 	Quantidade int       `json:"quantidade"`
