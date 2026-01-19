@@ -2,31 +2,40 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
-
-var DB *sql.DB
-
-func Connect() {
-	dsn := "root:1234@tcp(localhost:3306)/db_obracrud?parseTime=true"
-	var err error
-	DB, err = sql.Open("mysql", dsn)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-
-	err = DB.Ping()
-	if err != nil {
-		log.Fatal("Failed to ping database:", err)
-	}
-
-	log.Println("Database connected successfully")
+type Database struct {
+	DB *sql.DB
 }
 
-func Close() {
-	if DB != nil {
-		DB.Close()
-	}	
+func NewDatabase(dsn string) (*Database, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao abrir conexão: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("erro ao conectar ao banco de dados: %w", err)
+	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	fmt.Println("Conectado ao MySQL com sucesso!")
+
+	return &Database{DB: db}, nil
+}
+
+func (d *Database) Close() error {
+	if d.DB != nil {
+		return d.DB.Close()
+	}
+	return nil
+}
+
+func (d *Database) GetDB() *sql.DB {
+	return d.DB
 }

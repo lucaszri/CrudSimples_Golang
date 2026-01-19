@@ -1,27 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
-	"obra-crud/database"
-	"obra-crud/handlers"
-	"obra-crud/repositories"
+	"obra-crud/app"
 )
 
 func main() {
-	database.Connect()
-	defer database.Close()
+ application, err := app.NewApp()
+ if err != nil {
+  log.Fatalf("Erro ao iniciar a aplicação: %v", err)
+ }
+ defer application.Close()
 
-	produtoRepo := repositories.NewProdutoRepository(database.DB)
-	produtoHandler := handlers.NewProdutoHandler(produtoRepo)
-	
-	http.Handle("/produtos", produtoHandler)
-	http.Handle("/produtos/", produtoHandler)
-
-	fmt.Println("🚀 Servidor rodando na porta 8080")
-	fmt.Println("📡 API disponível em http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
-	fmt.Println("Hello, World!")
+ if err := application.Run(); err != nil {
+  log.Fatalf("Erro ao rodar a aplicação: %v", err)
+ }
 }
