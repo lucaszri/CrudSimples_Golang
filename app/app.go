@@ -42,7 +42,11 @@ func NewApp() (*App, error) {
 func (app *App) Run() error {
 	produtoRepo := repositories.NewProdutoRepository(app.DB.GetDB())
 	produtoHandler := handlers.NewProdutoHandler(produtoRepo)
+	itemCompraRepo := repositories.NewItemCompraRepository(app.DB.GetDB())
+	itensCompraHandler := handlers.NewItemCompraHandler(itemCompraRepo)
 
+	http.Handle("/itens_compra", itensCompraHandler)
+	http.Handle("/itens_compra/", itensCompraHandler)
 	http.Handle("/produtos", produtoHandler)
 	http.Handle("/produtos/", produtoHandler)
 
