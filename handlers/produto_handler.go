@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"net/http"
-	"obra-crud/repositories"
-	"obra-crud/models"
 	"encoding/json"
+	"net/http"
+	"obra-crud/models"
+	"obra-crud/repositories"
 	"strconv"
+	"strings"
 )
 
 type ProdutoHandler struct {
@@ -17,18 +18,26 @@ func NewProdutoHandler(repo *repositories.ProdutoRepository) *ProdutoHandler {
 }
 
 func (h *ProdutoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.CreateProduto(w, r)
-	case http.MethodGet:
+
+	path := strings.TrimSuffix(r.URL.Path, "/")
+	
+	id := strings.TrimPrefix(path, "/produtos/")
+	hasID := id != "" && id != path
+	
+	// Combinar path + método em um switch
+	switch {
+	case path == "/produtos" && r.Method == http.MethodGet:
 		h.GetAllProdutos(w, r)
-	case http.MethodPut:
-		h.UpdateProduto(w, r)
-	case http.MethodDelete:
-		idStr := r.URL.Path[len("/produtos/"):]
-		h.DeleteProduto(w, r, idStr)
+	case path == "/produtos" && r.Method == http.MethodPost:
+		h.CreateProduto(w, r)
+	case hasID && r.Method == http.MethodGet:
+		h.GetProdutoByID(w, r, id)
+	case hasID && r.Method == http.MethodPut:
+		h.UpdateProduto(w, r, id)
+	case hasID && r.Method == http.MethodDelete:
+		h.DeleteProduto(w, r, id)
 	default:
-		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		http.Error(w, "Rota ou método não encontrado", http.StatusNotFound)
 	}
 }
 
@@ -58,7 +67,22 @@ func (h *ProdutoHandler) GetAllProdutos(w http.ResponseWriter, r *http.Request) 
 	json.NewEncoder(w).Encode(produtos)
 }
 
-func (h *ProdutoHandler) UpdateProduto(w http.ResponseWriter, r *http.Request) {
+func (h *ProdutoHandler) GetProdutoByID(w http.ResponseWriter, r *http.Request, idStr string) {
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+	produto, err := h.Repo.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(produto)
+}
+
+func (h *ProdutoHandler) UpdateProduto(w http.ResponseWriter, r *http.Request, idStr string) {
 	var produto models.Produto
 	err := json.NewDecoder(r.Body).Decode(&produto)
 	if err != nil {

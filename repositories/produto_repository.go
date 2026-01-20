@@ -42,6 +42,17 @@ func (r* ProdutoRepository) GetAll() ([]models.Produto, error) {
 	return produtos, nil
 }
 
+func (r* ProdutoRepository) GetByID(id int) (*models.Produto, error) {
+	query := "SELECT id, nome, valor FROM produtos WHERE id = ?"
+	row := r.DB.QueryRow(query, id)
+	var produto models.Produto
+	err := row.Scan(&produto.ID, &produto.Nome, &produto.Valor)
+	if err != nil {
+		return nil, err
+	}
+	return &produto, nil
+}
+
 func (r* ProdutoRepository) Update(produto models.Produto) error {
 	query := "UPDATE produtos SET nome = ?, valor = ? WHERE id = ?"
 	_, err := r.DB.Exec(query, produto.Nome, produto.Valor, produto.ID)
